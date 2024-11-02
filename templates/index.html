@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Recognition</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .navbar {
+            background-color: #14467b;
+        }
+
+        .navbar-brand {
+            font-size: 2rem; /* Enlarge the title */
+            color: white;
+            text-align: center; /* Center-align the title */
+            width: 100%; /* Full width to ensure centering works */
+        }
+
+        .container {
+            margin-top: 50px;
+            text-align: center; /* Center-align all text in the container */
+        }
+
+        .canvas-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            background-color: #ffffff;
+            display: inline-block; /* Center the card horizontally */
+        }
+
+        canvas {
+            border: 1px solid black;
+            background-color: black;
+            width: 280px;
+            height: 280px;
+        }
+
+        .btn-primary {
+            background-color: #28a745;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+
+        h1 {
+            font-weight: bold;
+            color: #343a40;
+            font-size: 2rem; /* Enlarge the title */
+            margin-bottom: 20px; /* Space below title */
+            text-align: center; /* Center-align the title */
+        }
+
+        #result {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            color: #343a40;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand">DIGIT RECOGNITION</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Draw a Digit (0-9)</h1> <!-- Title placed directly in the container -->
+        <div class="canvas-card">
+            <canvas id="canvas" width="280" height="280"></canvas>
+            <br>
+            <button id="clear" class="btn btn-primary btn-lg">Clear</button>
+            <button id="predict" class="btn btn-primary btn-lg">Predict</button>
+            <h2 id="result"></h2>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const result = document.getElementById('result');
+        let drawing = false;
+
+        // Set the initial background color to black
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add event listeners for mouse actions
+        canvas.addEventListener('mousedown', () => {
+            drawing = true;  // Set drawing to true when mouse is pressed
+        });
+        canvas.addEventListener('mouseup', () => {
+            drawing = false; // Set drawing to false when mouse is released
+            ctx.beginPath(); // Start a new path to prevent connecting lines
+        });
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(event) {
+            if (!drawing) return; // Only draw if drawing is true
+
+            ctx.lineWidth = 10;  // Slightly thinner line
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'white'; // Draw white digits on black background
+
+            ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+            ctx.stroke();
+            ctx.beginPath(); // Start a new path for the next segment
+            ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop); // Move to the current mouse position
+        }
+
+        document.getElementById('clear').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Fill with black after clearing
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            result.innerText = '';
+        });
+
+        document.getElementById('predict').addEventListener('click', async () => {
+            const dataURL = canvas.toDataURL('image/png');
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageData: dataURL })
+            });
+            const prediction = await response.json();
+            result.innerText = `Predicted digit: ${prediction.prediction}`;
+        });
+    </script>
+
+</body>
+</html>
